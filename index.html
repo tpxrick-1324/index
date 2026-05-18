@@ -150,22 +150,11 @@ body {
 
   <div class="form-lead" id="leadForm">
     <h3>📋 填写信息，获取完整诊断报告</h3>
-    <form action="https://formsubmit.co/1640641428@qq.com" method="POST" id="leadFormElement">
-      <!-- 防垃圾配置 -->
-      <input type="hidden" name="_captcha" value="false">
-      <input type="hidden" name="_next" value="https://tpxrick-1324.github.io/index/?submitted=1">
-      <input type="hidden" name="_subject" value="📋 新财税诊断线索">
-      <!-- 评分数据 -->
-      <input type="hidden" name="评分" id="hiddenScore">
-      <input type="hidden" name="风险等级" id="hiddenLevel">
-      <input type="hidden" name="风险点" id="hiddenRisks">
-      <input type="hidden" name="来源" value="H5自测工具">
-      <!-- 用户填写 -->
-      <input type="text" name="姓名" id="leadName" placeholder="您的姓名" required>
-      <input type="tel" name="手机号" id="leadPhone" placeholder="手机号码" required>
-      <input type="text" name="企业名称" id="leadCompany" placeholder="企业名称（选填）">
-      <button class="btn-lead" id="leadSubmitBtn" type="submit">提交，获取报告</button>
-    </form>
+    <!-- 不跳转表单，用JavaScript提交 -->
+    <input type="text" id="leadName" placeholder="您的姓名" required>
+    <input type="tel" id="leadPhone" placeholder="手机号码" required>
+    <input type="text" id="leadCompany" placeholder="企业名称（选填）">
+    <button class="btn-lead" id="leadSubmitBtn" onclick="submitLead()">提交，获取报告</button>
     <div style="text-align:center;margin-top:10px;font-size:11px;color:#999;">信息严格保密，仅用于财税服务对接</div>
   </div>
 
@@ -268,25 +257,76 @@ function showResult(score, risks) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+const PUSHPLUS_TOKEN = '948196487bd9426a95c9cdf1373d622b';
+
 function showLeadForm() {
-  // 提交前先把评分数据写入隐藏字段
   const riskTexts = [];
   answers.forEach((a, i) => { if (a === 'shi') riskTexts.push(details[i]); });
-  document.getElementById('hiddenScore').value = lastScore + '分';
-  document.getElementById('hiddenLevel').value = lastLevel;
-  document.getElementById('hiddenRisks').value = riskTexts.join('；') || '无';
-
   document.getElementById('leadForm').style.display = 'block';
   document.getElementById('leadForm').scrollIntoView({ behavior: 'smooth' });
 }
 
-// 表单提交时显示加载状态
-document.getElementById('leadFormElement').addEventListener('submit', function(e) {
+// 提交到 PushPlus 推送微信
+async function submitLead() {
+  const name = document.getElementById('leadName').value.trim();
+  const phone = document.getElementById('leadPhone').value.trim();
+  const company = document.getElementById('leadCompany').value.trim();
+
+  if (!name) { showToast('请输入您的姓名'); return; }
+  if (!phone || !/^1\d{10}$/.test(phone)) { showToast('请输入正确的手机号码'); return; }
+
   const btn = document.getElementById('leadSubmitBtn');
-  btn.textContent = '提交中...';
-  btn.disabled = true;
-  // 让表单正常提交，formsubmit 会处理剩下的
-});
+  btn.textContent = '提交中...'; btn.disabled = true;
+
+  // 获取风险点
+  const riskTexts = [];
+  answers.forEach((a, i) => { if (a === 'shi') riskTexts.push(details[i]); });
+  const riskStr = riskTexts.join('\n') || '无';
+
+  // 拼装推送内容
+  const title = `📋 新财税诊断线索 - ${name}`;
+  const content = [
+    `**姓名：** ${name}`,
+    `**电话：** ${phone}`,
+    `**企业：** ${company || '未填写'}`,
+    `**评分：** ${lastScore}分 · ${lastLevel}`,
+    `**风险点：**`,
+    riskStr
+  ].join('\n');
+
+  try {
+    // 方式1：fetch POST（优先）
+    await fetch('https://www.pushplus.plus/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: PUSHPLUS_TOKEN,
+        title: title,
+        content: content,
+        template: 'markdown'
+      })
+    });
+  } catch (e) {
+    // 方式2：img GET 兜底（如果fetch有CORS问题）
+    const img = new Image();
+    img.src = 'https://www.pushplus.plus/send?token=' + PUSHPLUS_TOKEN +
+      '&title=' + encodeURIComponent(title) +
+      '&content=' + encodeURIComponent(content + '\n\n（来自H5自测工具）');
+  }
+
+  // 显示成功
+  showToast('✅ 提交成功！我们将在30分钟内与您联系');
+  btn.textContent = '已提交 ✓';
+  document.getElementById('ctaBtn').textContent = '✅ 已提交，等待专家联系';
+  document.getElementById('ctaBtn').disabled = true;
+  document.getElementById('leadForm').style.display = 'none';
+  document.querySelector('.back-btn').style.display = 'none';
+
+  // 清空输入
+  document.getElementById('leadName').value = '';
+  document.getElementById('leadPhone').value = '';
+  document.getElementById('leadCompany').value = '';
+}
 
 // 表单已用 formsubmit.co 处理，submitLead 不再需要
 
@@ -304,24 +344,6 @@ function showToast(msg) {
 }
 
 renderQuestions();
-
-// 如果是从 formsubmit 跳转回来的，显示成功
-if (window.location.search.includes('submitted=1')) {
-  document.getElementById('formWrap').style.display = 'none';
-  document.getElementById('resultWrap').style.display = 'block';
-  document.getElementById('resultTag').className = 'result-tag tag-safe';
-  document.getElementById('resultTag').textContent = '✅';
-  document.getElementById('resultScore').textContent = '';
-  document.getElementById('resultLabel').textContent = '提交成功！';
-  document.getElementById('resultDesc').innerHTML =
-    '您的信息已收到，我们将在 <strong>30 分钟内</strong> 与您联系。<br>' +
-    '请保持手机畅通，我们的财税专家将为您免费解读诊断报告。';
-  document.getElementById('ctaBtn').textContent = '✅ 已提交';
-  document.getElementById('ctaBtn').disabled = true;
-  document.getElementById('resultDetail').innerHTML = '';
-  // 清空URL参数
-  window.history.replaceState({}, document.title, window.location.pathname);
-}
 </script>
 </body>
 </html>

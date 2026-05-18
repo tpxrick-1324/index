@@ -34,7 +34,6 @@ body {
   border-radius:50%; width:20px; height:20px; text-align:center;
   font-size:11px; line-height:20px; margin-right:6px; vertical-align:middle;
 }
-.question .q-risk { font-size:11px; color:#999; margin-left:6px; }
 .options { display:flex; gap:10px; }
 .options label {
   flex:1; text-align:center; padding:10px 0;
@@ -57,17 +56,12 @@ body {
 }
 .btn-submit:active { transform:scale(0.97); opacity:0.9; }
 .btn-submit:disabled { opacity:0.5; cursor:not-allowed; }
-
-/* 结果页 */
 .result-wrap { display:none; padding:20px 16px; max-width:480px; margin:0 auto; }
 .result-card {
   background:#fff; border-radius:16px; padding:28px 20px;
   box-shadow:0 4px 20px rgba(26,54,93,0.12); text-align:center;
 }
-.result-score {
-  font-size:56px; font-weight:900; line-height:1;
-  margin:12px 0 4px;
-}
+.result-score { font-size:56px; font-weight:900; line-height:1; margin:12px 0 4px; }
 .result-label { font-size:16px; font-weight:700; margin-bottom:16px; }
 .result-desc { font-size:13px; color:#666; line-height:1.6; margin-bottom:20px; text-align:left; }
 .result-detail { text-align:left; font-size:13px; color:#555; line-height:1.8; margin-bottom:20px; }
@@ -87,9 +81,10 @@ body {
   width:100%; cursor:pointer; transition:all .2s; margin-top:4px;
 }
 .result-cta:active { transform:scale(0.97); }
+.result-cta:disabled { opacity:0.6; cursor:default; }
 .form-lead {
   background:#fff; border-radius:14px; padding:20px;
-  margin-top:16px; box-shadow:0 2px 12px rgba(26,54,93,0.08);
+  margin-top:16px; box-shadow:0 2px 12px rgba(26,54,93,0.08); display:none;
 }
 .form-lead h3 { font-size:15px; text-align:center; margin-bottom:12px; }
 .form-lead input {
@@ -103,6 +98,7 @@ body {
   border-radius:10px; color:#fff; font-size:15px; font-weight:700; cursor:pointer;
 }
 .form-lead .btn-lead:active { opacity:0.8; }
+.form-lead .btn-lead:disabled { opacity:0.5; cursor:not-allowed; }
 .back-btn {
   display:inline-block; margin-top:16px; color:#1A365D;
   font-size:13px; cursor:pointer; text-decoration:underline;
@@ -118,26 +114,30 @@ body {
   pointer-events:none; white-space:nowrap;
 }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.loading {
+  display:inline-block; width:14px; height:14px;
+  border:2px solid rgba(255,255,255,0.3); border-top-color:#fff;
+  border-radius:50%; animation:spin .6s linear infinite;
+  vertical-align:middle; margin-right:6px;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
 </style>
 </head>
 <body>
 
 <div class="toast" id="toast"></div>
 
-<!-- 头部 -->
 <div class="header">
   <div class="badge">永勤财税 · 企业财税管家</div>
   <h1>企业税务风险自测</h1>
   <p>10道题 · 仅需3分钟 · 免费获取专属风险评估</p>
 </div>
 
-<!-- 问卷区 -->
 <div class="form-wrap" id="formWrap">
   <div id="questionsContainer"></div>
   <button class="btn-submit" id="submitBtn" onclick="submitQuiz()">提交测评</button>
 </div>
 
-<!-- 结果区 -->
 <div class="result-wrap" id="resultWrap">
   <div class="result-card">
     <div class="result-tag" id="resultTag">等级</div>
@@ -145,16 +145,27 @@ body {
     <div class="result-label" id="resultLabel">分</div>
     <div class="result-desc" id="resultDesc"></div>
     <ul class="result-detail" id="resultDetail"></ul>
-    <button class="result-cta" onclick="showLeadForm()">📞 免费获取专家解读方案</button>
+    <button class="result-cta" id="ctaBtn" onclick="showLeadForm()">📞 免费获取专家解读方案</button>
   </div>
 
-  <!-- 留资表单 -->
-  <div class="form-lead" id="leadForm" style="display:none;">
+  <div class="form-lead" id="leadForm">
     <h3>📋 填写信息，获取完整诊断报告</h3>
-    <input type="text" id="leadName" placeholder="您的姓名" required>
-    <input type="tel" id="leadPhone" placeholder="手机号码" required>
-    <input type="text" id="leadCompany" placeholder="企业名称">
-    <button class="btn-lead" onclick="submitLead()">提交，获取报告</button>
+    <form action="https://formsubmit.co/1640641428@qq.com" method="POST" id="leadFormElement">
+      <!-- 防垃圾配置 -->
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_next" value="https://tpxrick-1324.github.io/index/?submitted=1">
+      <input type="hidden" name="_subject" value="📋 新财税诊断线索">
+      <!-- 评分数据 -->
+      <input type="hidden" name="评分" id="hiddenScore">
+      <input type="hidden" name="风险等级" id="hiddenLevel">
+      <input type="hidden" name="风险点" id="hiddenRisks">
+      <input type="hidden" name="来源" value="H5自测工具">
+      <!-- 用户填写 -->
+      <input type="text" name="姓名" id="leadName" placeholder="您的姓名" required>
+      <input type="tel" name="手机号" id="leadPhone" placeholder="手机号码" required>
+      <input type="text" name="企业名称" id="leadCompany" placeholder="企业名称（选填）">
+      <button class="btn-lead" id="leadSubmitBtn" type="submit">提交，获取报告</button>
+    </form>
     <div style="text-align:center;margin-top:10px;font-size:11px;color:#999;">信息严格保密，仅用于财税服务对接</div>
   </div>
 
@@ -164,12 +175,11 @@ body {
 </div>
 
 <div class="footer">
-  <strong>永勤财税</strong> · 企业全生命周期财税服务<br>
-  品牌定位：以轻成本，筑百万级财税防线
+  <strong>永勤财税</strong> · 企业全生命周期财税服务
 </div>
 
 <script>
-// ── 10道题（从你之前的10题版本）──
+// ── 10道题 ──
 const questions = [
   "企业是否存在A/B两套账？",
   "企业是否存在账外资金回流，其他应付款过大？",
@@ -182,70 +192,55 @@ const questions = [
   "企业是否存在商业回扣或居间费无票入账的问题？",
   "企业是否存在股权转让溢价、高额所得税问题？"
 ];
-
-const scores = [15, 12, 10, 8, 12, 6, 8, 7, 12, 10]; // 答"是"的分数
+const scores = [15, 12, 10, 8, 12, 6, 8, 7, 12, 10];
 const details = [
-  "A/B两套账 — 最严重的税务违法之一，一旦查实面临补税+罚款+滞纳金",
+  "A/B两套账 — 最严重的税务违法之一",
   "账外资金回流 — 资金流异常，金税四期核心监控项",
-  "无票支出/替票报销 — 虚假发票列支成本，易被标记",
-  "收入确认不合规 — 纳税所属期错误，申报数据比对即发现",
-  "公私不分/小金库 — 涉及隐瞒收入+偷逃个税+职务侵占",
-  "个税税负高 — 缺乏合理筹划，长期多缴冤枉税",
-  "社保基数不符 — 社保入税后自动比对，差异大即预警",
-  "账务不规范 — 账实不符，稽查时无法自证清白",
-  "回扣/居间费无票 — 商业贿赂+偷逃个税，双重违法",
-  "股权转让溢价 — 错过筹划窗口期，20%个税无法补救"
+  "无票支出/替票报销 — 虚假发票列支成本",
+  "收入确认不合规 — 纳税所属期错误",
+  "公私不分/小金库 — 隐瞒收入+偷逃个税",
+  "个税税负高 — 缺乏筹划多缴冤枉税",
+  "社保基数不符 — 社保入税自动比对即预警",
+  "账务不规范 — 稽查时无法自证清白",
+  "回扣/居间费无票 — 商业贿赂+偷逃个税",
+  "股权转让溢价 — 错过筹划20%个税无法补救"
+];
+const levelMap = [
+  { max: 10, tag: '低风险', cls: 'tag-safe', desc: '企业财税状况整体合规，建议每年做一次全面体检。' },
+  { max: 30, tag: '关注', cls: 'tag-warn', desc: '存在一定财税瑕疵，建议升级代账服务，做专项辅导。' },
+  { max: 55, tag: '预警', cls: 'tag-danger', desc: '存在明显的风险隐患，建议尽快安排全面账务排查。' },
+  { max: 999, tag: '高危', cls: 'tag-urgent', desc: '已处于高稽查风险区，需立即介入处理！' }
 ];
 
 let answers = [];
-let submitted = false;
+let lastScore = 0;
+let lastLevel = '';
 
-// 渲染题目
 function renderQuestions() {
-  const container = document.getElementById('questionsContainer');
-  container.innerHTML = '';
+  const c = document.getElementById('questionsContainer');
+  c.innerHTML = '';
   questions.forEach((q, i) => {
-    const div = document.createElement('div');
-    div.className = 'question';
-    div.innerHTML = `
-      <div class="q-title">
-        <span class="q-num">${i+1}</span>
-        ${q}
-      </div>
+    const d = document.createElement('div'); d.className = 'question';
+    d.innerHTML = `
+      <div class="q-title"><span class="q-num">${i+1}</span>${q}</div>
       <div class="options">
         <input type="radio" name="q${i}" id="q${i}y" value="shi" class="shi">
         <label for="q${i}y">是</label>
         <input type="radio" name="q${i}" id="q${i}n" value="fou" class="fou" checked>
         <label for="q${i}n">否</label>
-      </div>
-    `;
-    container.appendChild(div);
+      </div>`;
+    c.appendChild(d);
   });
 }
 
-// 提交测评
 function submitQuiz() {
-  // 检查是否全部答完
   answers = [];
-  let allDone = true;
   for (let i = 0; i < questions.length; i++) {
-    const selected = document.querySelector(`input[name="q${i}"]:checked`);
-    if (selected) answers.push(selected.value);
-    else { allDone = false; break; }
+    const s = document.querySelector(`input[name="q${i}"]:checked`);
+    if (s) answers.push(s.value); else { showToast('请回答全部题目'); return; }
   }
-  if (!allDone) { showToast('请回答全部题目'); return; }
-
-  // 算分
-  let total = 0;
-  let risks = [];
-  answers.forEach((ans, i) => {
-    if (ans === 'shi') {
-      total += scores[i];
-      risks.push({ idx: i, text: details[i] });
-    }
-  });
-
-  // 显示结果
+  let total = 0, risks = [];
+  answers.forEach((a, i) => { if (a === 'shi') { total += scores[i]; risks.push(details[i]); } });
   showResult(total, risks);
 }
 
@@ -253,68 +248,52 @@ function showResult(score, risks) {
   document.getElementById('formWrap').style.display = 'none';
   document.getElementById('resultWrap').style.display = 'block';
   document.getElementById('resultScore').textContent = score;
+  document.getElementById('leadForm').style.display = 'none';
+  document.getElementById('ctaBtn').disabled = false;
+  document.getElementById('ctaBtn').textContent = '📞 免费获取专家解读方案';
 
-  let tag, level, desc;
-  if (score <= 10) {
-    tag = '低风险'; desc = '企业财税状况整体合规，无重大问题。建议继续保持规范记账报税流程，每年做一次全面财税体检。';
-    document.getElementById('resultTag').className = 'result-tag tag-safe';
-  } else if (score <= 30) {
-    tag = '关注'; desc = '存在一定财税瑕疵，需关注优化。建议升级当前代账服务，针对具体问题做专项辅导。';
-    document.getElementById('resultTag').className = 'result-tag tag-warn';
-  } else if (score <= 55) {
-    tag = '预警'; desc = '存在较明显的财税风险隐患，部分问题已接近预警红线。建议尽快安排全面账务排查。';
-    document.getElementById('resultTag').className = 'result-tag tag-danger';
-  } else {
-    tag = '高危'; desc = '已处于高稽查风险区。金税四期体系下这些异常数据可能已被系统捕捉，需立即介入处理。';
-    document.getElementById('resultTag').className = 'result-tag tag-urgent';
-  }
+  const lv = levelMap.find(l => score <= l.max);
+  lastScore = score;
+  lastLevel = lv.tag;
 
-  document.getElementById('resultLabel').textContent = `分 · ${tag}`;
+  document.getElementById('resultTag').className = `result-tag ${lv.cls}`;
+  document.getElementById('resultLabel').textContent = `分 · ${lv.tag}`;
+  document.getElementById('resultDesc').textContent = lv.desc;
 
-  let detailHtml = '';
-  if (risks.length > 0) {
-    detailHtml = '<li style="font-weight:700;color:#1A365D;border:none;">📌 发现的风险点：</li>';
-    risks.forEach(r => {
-      detailHtml += `<li>⚠️ ${r.text}</li>`;
-    });
-  } else {
-    detailHtml = '<li style="border:none;">✅ 没有发现明显风险点，继续保持！</li>';
-  }
-  document.getElementById('resultDetail').innerHTML = detailHtml;
-  document.getElementById('resultDesc').textContent = desc;
-
+  let html = risks.length
+    ? '<li style="font-weight:700;color:#1A365D;border:none;">📌 发现的风险点：</li>' +
+      risks.map(r => `<li>⚠️ ${r}</li>`).join('')
+    : '<li style="border:none;">✅ 没有发现明显风险点，继续保持！</li>';
+  document.getElementById('resultDetail').innerHTML = html;
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  submitted = true;
 }
 
 function showLeadForm() {
+  // 提交前先把评分数据写入隐藏字段
+  const riskTexts = [];
+  answers.forEach((a, i) => { if (a === 'shi') riskTexts.push(details[i]); });
+  document.getElementById('hiddenScore').value = lastScore + '分';
+  document.getElementById('hiddenLevel').value = lastLevel;
+  document.getElementById('hiddenRisks').value = riskTexts.join('；') || '无';
+
   document.getElementById('leadForm').style.display = 'block';
   document.getElementById('leadForm').scrollIntoView({ behavior: 'smooth' });
 }
 
-function submitLead() {
-  const name = document.getElementById('leadName').value.trim();
-  const phone = document.getElementById('leadPhone').value.trim();
-  if (!name) { showToast('请输入您的姓名'); return; }
-  if (!phone || !/^1\d{10}$/.test(phone)) { showToast('请输入正确的手机号码'); return; }
+// 表单提交时显示加载状态
+document.getElementById('leadFormElement').addEventListener('submit', function(e) {
+  const btn = document.getElementById('leadSubmitBtn');
+  btn.textContent = '提交中...';
+  btn.disabled = true;
+  // 让表单正常提交，formsubmit 会处理剩下的
+});
 
-  const btn = document.querySelector('.btn-lead');
-  btn.textContent = '提交中...'; btn.disabled = true;
-
-  // 模拟提交（实际可对接表单平台）
-  setTimeout(() => {
-    showToast('✅ 提交成功！我们将在30分钟内与您联系');
-    btn.textContent = '已提交 ✓'; btn.disabled = false;
-    document.querySelector('.result-cta').textContent = '✅ 已提交，等待专家联系';
-    document.querySelector('.result-cta').disabled = true;
-  }, 800);
-}
+// 表单已用 formsubmit.co 处理，submitLead 不再需要
 
 function resetQuiz() {
   document.getElementById('formWrap').style.display = 'block';
   document.getElementById('resultWrap').style.display = 'none';
   document.getElementById('leadForm').style.display = 'none';
-  submitted = false;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -324,8 +303,25 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// 初始化
 renderQuestions();
+
+// 如果是从 formsubmit 跳转回来的，显示成功
+if (window.location.search.includes('submitted=1')) {
+  document.getElementById('formWrap').style.display = 'none';
+  document.getElementById('resultWrap').style.display = 'block';
+  document.getElementById('resultTag').className = 'result-tag tag-safe';
+  document.getElementById('resultTag').textContent = '✅';
+  document.getElementById('resultScore').textContent = '';
+  document.getElementById('resultLabel').textContent = '提交成功！';
+  document.getElementById('resultDesc').innerHTML =
+    '您的信息已收到，我们将在 <strong>30 分钟内</strong> 与您联系。<br>' +
+    '请保持手机畅通，我们的财税专家将为您免费解读诊断报告。';
+  document.getElementById('ctaBtn').textContent = '✅ 已提交';
+  document.getElementById('ctaBtn').disabled = true;
+  document.getElementById('resultDetail').innerHTML = '';
+  // 清空URL参数
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
 </script>
 </body>
 </html>
